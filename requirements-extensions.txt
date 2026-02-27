@@ -1,0 +1,23 @@
+# Additional requirements for SQL-R1 extensions
+# Install these in addition to SQL-R1's base requirements
+
+# Testing
+pytest>=7.0.0
+hypothesis>=6.0.0  # For property-based testing
+
+# Configuration
+pyyaml>=6.0
+
+# Data processing and analysis
+pandas>=1.5.0
+numpy>=1.23.0
+
+# Visualization
+matplotlib>=3.5.0
+seaborn>=0.12.0
+
+# SQL parsing
+sqlparse>=0.4.0
+
+# Utilities
+tqdm>=4.65.0

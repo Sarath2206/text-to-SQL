@@ -1,0 +1,15 @@
+# Core dependencies for SQL-R1 Extension
+torch>=2.0.0
+transformers>=4.35.0
+datasets>=2.14.0
+sqlparse>=0.4.4
+pyyaml>=6.0
+accelerate>=0.24.0
+
+# Optional dependencies
+wandb>=0.15.0  # For experiment tracking
+pytest>=7.4.0  # For running tests
+pytest-cov>=4.1.0  # For test coverage
+
+# For 24GB GPU optimization
+bitsandbytes>=0.41.0  # For quantization (optional)
