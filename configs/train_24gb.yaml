@@ -1,0 +1,111 @@
+# Configuration for 24GB GPU Training
+# This configuration optimizes SQL-R1 training for a single 24GB GPU
+
+# Model Configuration
+model:
+  name: "Qwen/Qwen2.5-Coder-3B-Instruct"  # Use 3B instead of 7B/14B
+  path: "models/Qwen2.5-Coder-3B-Instruct"
+  use_remove_padding: true
+  enable_gradient_checkpointing: true  # Saves ~3-4GB memory
+
+# Training Configuration
+training:
+  # Batch sizes (optimized for 24GB)
+  batch_size: 2  # Reduced from 8
+  gradient_accumulation_steps: 8  # Increased from 1
+  effective_batch_size: 16  # 2 * 8 = 16
+  
+  # Memory optimization
+  mixed_precision: "bf16"  # Use bfloat16 for memory efficiency
+  
+  # PPO configuration
+  ppo_mini_batch_size: 2
+  ppo_micro_batch_size: 2
+  ppo_epochs: 4
+  
+  # Optimizer
+  learning_rate: 1.0e-5
+  max_grad_norm: 1.0
+  
+  # KL divergence
+  use_kl_loss: true
+  kl_loss_coef: 0.001
+  kl_loss_type: "low_var_kl"
+  
+  # Data
+  max_prompt_length: 4096
+  max_response_length: 2048
+
+# FSDP Configuration (single GPU, minimal sharding)
+fsdp:
+  param_offload: false  # Keep on GPU for single GPU setup
+  grad_offload: false
+  optimizer_offload: false
+
+# Rollout Configuration (vLLM)
+rollout:
+  name: "vllm"
+  tensor_model_parallel_size: 1  # Reduced from 4 for single GPU
+  gpu_memory_utilization: 0.3  # Increased from 0.2
+  n: 4  # Reduced from 8 samples per prompt
+  temperature: 1.1
+  log_prob_micro_batch_size: 40  # Reduced from 80
+
+# Reward Configuration
+reward:
+  # Baseline SQL-R1 rewards (preserved)
+  format_weight: 1.0
+  execution_weight: 2.0
+  result_weight: 3.0
+  length_weight: 0.1
+  
+  # Enhanced rewards (our extensions)
+  enable_enhanced: true
+  schema_weight: -0.5  # Penalty for hallucinations
+  structural_select_weight: 0.3
+  structural_where_weight: 0.3
+  structural_join_weight: 0.2
+  syntax_weight: 0.2
+
+# Logging Configuration
+logging:
+  log_interval: 10  # Log every 10 steps
+  save_interval: 500  # Save checkpoint every 500 steps
+  eval_interval: 100  # Run validation every 100 steps
+  detailed_rewards: true  # Log reward component breakdown
+  track_gpu_memory: true  # Track GPU memory usage
+  logger: ['wandb']  # Use WandB for logging
+
+# Training Schedule
+schedule:
+  total_epochs: 10
+  save_freq: 100
+  test_freq: 100
+  critic_warmup: 0
+
+# Algorithm
+algorithm:
+  adv_estimator: "grpo"  # Group Relative Policy Optimization
+  kl_ctrl:
+    kl_coef: 0.001
+
+# Hardware
+hardware:
+  n_gpus_per_node: 1  # Single GPU
+  nnodes: 1
+
+# Data Paths
+data:
+  train_files: "data/train.parquet"
+  val_files: "data/test.parquet"
+
+# Output
+output:
+  default_local_dir: "logs/SQL-R1-24GB"
+  default_hdfs_dir: null
+
+# Notes:
+# - Expected memory usage: ~20-22GB (fits in 24GB with buffer)
+# - Training will be slower than 8x80GB setup due to smaller batch size
+# - Gradient accumulation maintains effective batch size of 16
+# - Gradient checkpointing adds ~20% compute overhead but saves memory
